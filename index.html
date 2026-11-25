@@ -1,0 +1,540 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Line Store</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;900&family=Manrope:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0b0b0b;
+    --paper: #ffffff;
+    --wash: #efefec;
+    --mute: #8b8b86;
+    --line: 1.5px;
+    --gap: 16px;
+    --bar-h: 64px;
+    /* ink textures: brush = rough stroke, drip = stroke with runs hanging below (bottom 20% of the image) */
+    --brush: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 340 64' preserveAspectRatio='none'><filter id='r'><feTurbulence type='fractalNoise' baseFrequency='0.04' numOctaves='2' seed='4'/><feDisplacementMap in='SourceGraphic' scale='6'/></filter><path filter='url(%23r)' fill='%230b0b0b' d='M5 7C90 1 220 9 335 4L336 59C240 63 120 56 4 61Z'/><g stroke='%23fff' stroke-opacity='.16' fill='none' stroke-width='1.2'><path d='M14 16C100 12 220 18 326 13'/><path d='M10 48C120 52 230 45 330 50'/></g></svg>");
+    --drip: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 340 80' preserveAspectRatio='none'><filter id='r'><feTurbulence type='fractalNoise' baseFrequency='0.04' numOctaves='2' seed='4'/><feDisplacementMap in='SourceGraphic' scale='6'/></filter><g filter='url(%23r)' fill='%230b0b0b'><path d='M5 7C90 1 220 9 335 4L336 62C240 66 120 59 4 64Z'/><path d='M56 60c0 8 2 12 5 15 3-3 4-7 4-15z'/><circle cx='61' cy='77' r='2.6'/><path d='M234 60c0 5 1 8 3 9 2-1 2-4 2-9z'/><path d='M280 60c-1 7 0 11 3 13 3-2 3-6 2-13z'/><circle cx='300' cy='75' r='1.8'/></g><g stroke='%23fff' stroke-opacity='.16' fill='none' stroke-width='1.2'><path d='M14 18C100 14 220 20 326 15'/><path d='M10 50C120 54 230 47 330 52'/></g></svg>");
+    --blot: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><filter id='r'><feTurbulence type='fractalNoise' baseFrequency='0.08' numOctaves='2' seed='2'/><feDisplacementMap in='SourceGraphic' scale='4'/></filter><path filter='url(%23r)' fill='%230b0b0b' d='M20 3C31 2 38 10 37 20c-1 9 3 15-7 17-8 2-12-2-19-1-6 1-9-6-8-12 1-6-3-11 2-16 4-4 9-4 15-5z'/></svg>");
+    --hairline: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 340 6' preserveAspectRatio='none'><path fill='%230b0b0b' d='M1 3C80 1 200 4 339 2V4C200 6 80 4 1 5Z'/></svg>");
+    --drips-row: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 375 22'><filter id='r'><feTurbulence type='fractalNoise' baseFrequency='0.08' numOctaves='1' seed='6'/><feDisplacementMap in='SourceGraphic' scale='2.5'/></filter><g filter='url(%23r)' fill='%230b0b0b'><path d='M38 0c0 6 1 9 3 10 2-1 2-4 2-10z'/><path d='M128 0c-1 9 0 13 3 15 3-2 3-6 2-15z'/><circle cx='131' cy='19' r='2'/><path d='M212 0c0 4 1 5 2 6 1-1 2-2 2-6z'/><path d='M306 0c0 7 1 11 3 12 2-1 3-5 3-12z'/><circle cx='340' cy='6' r='1.4'/></g></svg>");
+    --drip-one: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 16'><path fill='%230b0b0b' d='M3 0c0 6-1 9 0 11 1 2 4 2 5 0 1-2-1-5-1-11z'/></svg>");
+    --splatter: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 400' fill='%230b0b0b' fill-opacity='.07'><path d='M352 40c22-4 40 10 38 30-2 14 8 24-4 36-12 10-26 2-40 6-16 4-30-8-26-24 3-12-6-22 4-34 8-10 16-12 28-14z'/><circle cx='318' cy='126' r='5'/><circle cx='300' cy='112' r='2.5'/><path d='M30 300c16-6 32 2 34 16 2 12 12 18 2 28-10 8-22 2-34 6-12 2-22-8-18-20 2-10-6-16 2-24 4-4 8-5 14-6z'/><circle cx='86' cy='290' r='3'/><circle cx='70' cy='372' r='4'/></svg>");
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { background: var(--paper); color: var(--ink); }
+  body {
+    font: 500 15px/1.4 Manrope, system-ui, sans-serif;
+    min-height: 100vh;
+    padding-bottom: calc(var(--bar-h) + 32px + env(safe-area-inset-bottom));
+    overflow-x: hidden;
+  }
+  body::before { content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none; background: var(--splatter) center / 520px auto repeat; }
+  button, input { font: inherit; color: inherit; }
+  button { background: none; border: 0; cursor: pointer; }
+  .wrap { max-width: 560px; margin: 0 auto; padding: 0 var(--gap); }
+  .display { font-family: Unbounded, sans-serif; letter-spacing: -0.02em; }
+
+  /* demo strip */
+  .demo {
+    background: var(--ink); color: var(--paper);
+    font-size: 11px; letter-spacing: .14em; text-transform: uppercase;
+    text-align: center; padding: 6px 0; white-space: nowrap; overflow: hidden;
+  }
+
+  /* header */
+  .top {
+    position: sticky; top: 0; z-index: 10; background: var(--paper);
+    border-bottom: var(--line) solid var(--ink);
+  }
+  .top::after { content: ''; position: absolute; left: 0; right: 0; top: 100%; height: 22px; background: var(--drips-row) 0 0 / 375px 22px repeat-x; pointer-events: none; }
+  .top .wrap { display: flex; align-items: center; justify-content: space-between; height: 56px; }
+  .logo { display: flex; align-items: center; gap: 10px; font-weight: 900; font-size: 18px; }
+  .logo svg { width: 28px; height: 28px; }
+  .cart-btn {
+    position: relative; width: 40px; height: 40px;
+    display: grid; place-items: center; border: var(--line) solid var(--ink);
+  }
+  .cart-btn svg { width: 20px; height: 20px; }
+  .cart-btn b {
+    position: absolute; top: -8px; right: -8px; min-width: 20px; height: 20px; padding: 0 5px;
+    background: var(--blot) center / 100% 100%; color: var(--paper); font-size: 11px; line-height: 20px; text-align: center;
+  }
+  .cart-btn b:empty { display: none; }
+
+  /* hero */
+  .hero { position: relative; padding: 28px 0 24px; overflow: hidden; }
+  .hero h1 { font-size: clamp(44px, 15vw, 76px); font-weight: 900; line-height: .9; position: relative; z-index: 1; }
+  .hero h1 span { display: block; }
+  .hero h1 .outline { color: var(--paper); -webkit-text-stroke: 1.5px var(--ink); }
+  .hero .stroke { display: block; width: 72%; height: 26px; margin: 10px 0 14px; }
+  .hero p { max-width: 220px; color: var(--ink); position: relative; z-index: 1; }
+  .hero .splash { position: absolute; right: -56px; top: 24px; width: 190px; height: 190px; z-index: 0; }
+  .rules { display: block; width: 100%; height: 30px; }
+
+  /* categories */
+  .cats {
+    display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none;
+    padding: 20px var(--gap) 4px; margin: 0 calc(var(--gap) * -1);
+  }
+  .cats::-webkit-scrollbar { display: none; }
+  .chip {
+    flex: none; height: 36px; padding: 0 14px; border: var(--line) solid var(--ink);
+    font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+  }
+  .chip.on, .size.on, .pay input:checked + span { background: var(--brush) center / 100% 100%; color: var(--paper); border-color: transparent; }
+
+  .section-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding: 20px 0 14px; background: var(--hairline) bottom / 100% 3px no-repeat; margin-bottom: var(--gap);
+  }
+  .section-head h2 { font-size: 15px; font-weight: 700; text-transform: uppercase; }
+  .section-head span { font-size: 12px; color: var(--mute); }
+
+  /* grid */
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap); }
+  .card { position: relative; text-align: left; display: flex; flex-direction: column; border: var(--line) solid var(--ink); background: var(--paper); }
+  .card:active { transform: translateY(1px); }
+  .card::after { content: ''; position: absolute; top: 100%; left: 22%; width: 7px; height: 11px; background: var(--drip-one) 0 0 / 100% 100%; }
+  .card:nth-child(3n+2)::after { left: 68%; height: 14px; }
+  .card:nth-child(3n)::after { left: 41%; height: 7px; }
+  .pic { position: relative; aspect-ratio: 1; border-bottom: var(--line) solid var(--ink); background: var(--paper); }
+  .pic svg { width: 100%; height: 100%; display: block; }
+  .pic .idx { position: absolute; top: 8px; left: 10px; font: 700 11px Unbounded, sans-serif; }
+  .pic .tag {
+    position: absolute; top: 8px; right: 8px; font-size: 10px; font-weight: 700; letter-spacing: .08em;
+    text-transform: uppercase; background: var(--brush) center / 100% 100%; color: var(--paper); padding: 4px 8px;
+  }
+  .meta { padding: 10px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+  .meta .name { font-weight: 700; font-size: 13px; line-height: 1.25; min-height: 2.5em; }
+  .meta .price { font: 700 14px Unbounded, sans-serif; display: flex; justify-content: space-between; align-items: center; }
+  .meta .price i { width: 30px; height: 30px; background: var(--blot) center / 100% 100%; color: var(--paper); display: grid; place-items: center; font-style: normal; font-size: 16px; line-height: 1; }
+
+  /* art */
+  .blot { fill: var(--wash); }
+  .ink path, .ink circle, .ink line { stroke: var(--ink); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+  .ink .shape { fill: var(--paper); }
+  .ink .detail { fill: none; }
+  .ink.dark .shape { fill: var(--ink); }
+  .ink.dark .detail { stroke: var(--paper); }
+  .shadow-stroke { fill: var(--ink); }
+
+  footer { margin-top: 32px; padding: 20px 0; text-align: center; font-size: 12px; color: var(--mute); }
+  footer .stroke { width: 120px; height: 14px; display: block; margin: 0 auto 10px; }
+
+  /* bottom cart bar */
+  .bar {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+    padding: 12px var(--gap) calc(22px + env(safe-area-inset-bottom));
+    background: linear-gradient(to top, var(--paper) 70%, transparent);
+    transform: translateY(120%); transition: transform .3s cubic-bezier(.2,.8,.2,1);
+  }
+  .bar.show { transform: none; }
+  .btn {
+    position: relative; isolation: isolate;
+    width: 100%; height: var(--bar-h); max-width: 528px; margin: 0 auto;
+    display: flex; align-items: center; justify-content: space-between; padding: 0 20px;
+    color: var(--paper); font-weight: 700; text-transform: uppercase; letter-spacing: .06em; font-size: 14px;
+  }
+  .btn::before { content: ''; position: absolute; inset: 0 0 -25% 0; z-index: -1; background: var(--drip) 0 0 / 100% 100% no-repeat; }
+  .btn:active::before { transform: scale(.985); }
+  .btn.center { justify-content: center; }
+  .btn.ghost { background: var(--paper); color: var(--ink); border: var(--line) solid var(--ink); }
+  .btn:disabled { opacity: .35; }
+  .btn .sum { font-family: Unbounded, sans-serif; }
+
+  /* sheet */
+  .scrim { position: fixed; inset: 0; z-index: 30; background: rgba(11,11,11,.45); opacity: 0; pointer-events: none; transition: opacity .25s; }
+  .scrim.show { opacity: 1; pointer-events: auto; }
+  .sheet {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 31; max-height: 92vh; overflow-y: auto;
+    background: var(--paper); border-top: var(--line) solid var(--ink);
+    transform: translateY(105%); transition: transform .35s cubic-bezier(.2,.8,.2,1);
+    padding-bottom: calc(20px + env(safe-area-inset-bottom));
+  }
+  .sheet.show { transform: none; }
+  .sheet::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 22px; background: var(--drips-row) 120px 0 / 375px 22px repeat-x; pointer-events: none; }
+  .sheet .wrap { padding-top: 10px; }
+  .grab { display: flex; justify-content: space-between; align-items: center; height: 44px; }
+  .grab svg { width: 64px; height: 12px; }
+  .x { width: 36px; height: 36px; border: var(--line) solid var(--ink); display: grid; place-items: center; font-size: 18px; line-height: 1; }
+
+  .p-pic { aspect-ratio: 1; border: var(--line) solid var(--ink); margin-bottom: var(--gap); }
+  .p-pic svg { width: 100%; height: 100%; display: block; }
+  .p-title { font-size: 22px; font-weight: 700; line-height: 1.15; }
+  .p-price { font: 700 20px Unbounded, sans-serif; margin: 8px 0 12px; }
+  .p-desc { color: #3a3a38; }
+  .label { font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; margin: 20px 0 8px; }
+  .sizes { display: grid; grid-template-columns: repeat(auto-fill, minmax(56px, 1fr)); gap: 8px; }
+  .size { height: 44px; border: var(--line) solid var(--ink); font-weight: 700; font-size: 13px; }
+  .specs { margin-top: 20px; border-top: var(--line) solid var(--ink); }
+  .specs div { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--ink); font-size: 13px; }
+  .specs div span:first-child { color: var(--mute); }
+  .actions { margin-top: 20px; }
+
+  .h-sheet { font-size: 22px; font-weight: 900; margin-bottom: 4px; }
+  .sub { color: var(--mute); font-size: 13px; margin-bottom: var(--gap); }
+  .line-item { display: grid; grid-template-columns: 72px 1fr auto; gap: 12px; align-items: center; padding: 12px 0; border-bottom: var(--line) solid var(--ink); }
+  .line-item:first-of-type { border-top: var(--line) solid var(--ink); }
+  .line-item .thumb { width: 72px; height: 72px; border: var(--line) solid var(--ink); }
+  .line-item .thumb svg { width: 100%; height: 100%; display: block; }
+  .line-item .n { font-weight: 700; font-size: 14px; line-height: 1.25; }
+  .line-item .s { font-size: 12px; color: var(--mute); margin-top: 2px; }
+  .line-item .pr { font: 700 13px Unbounded, sans-serif; margin-top: 6px; }
+  .qty { display: flex; flex-direction: column; align-items: center; border: var(--line) solid var(--ink); }
+  .qty button { width: 32px; height: 28px; font-size: 16px; line-height: 1; }
+  .qty span { font-weight: 700; font-size: 13px; height: 22px; line-height: 22px; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); width: 100%; text-align: center; }
+  .totals { margin: var(--gap) 0; }
+  .totals div { display: flex; justify-content: space-between; padding: 6px 0; font-size: 14px; }
+  .totals .grand { border-top: var(--line) solid var(--ink); margin-top: 6px; padding-top: 12px; font: 700 18px Unbounded, sans-serif; }
+  .empty { text-align: center; padding: 24px 0 8px; }
+  .empty svg { width: 160px; height: 160px; }
+  .empty p { margin: 8px 0 20px; color: var(--mute); }
+
+  form .field { display: block; margin-bottom: 12px; }
+  form .field span { display: block; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 6px; }
+  form input[type=text], form input[type=tel] {
+    width: 100%; height: 48px; padding: 0 12px; border: var(--line) solid var(--ink); border-radius: 0;
+    background: var(--paper); outline: none; font-size: 16px;
+  }
+  form input:focus { box-shadow: 4px 4px 0 var(--ink); }
+  .pay { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+  .pay label { position: relative; }
+  .pay input { position: absolute; opacity: 0; }
+  .pay span { display: grid; place-items: center; height: 48px; border: var(--line) solid var(--ink); font-weight: 700; font-size: 13px; text-align: center; }
+  .note { display: flex; gap: 10px; align-items: flex-start; border: var(--line) dashed var(--ink); padding: 10px 12px; font-size: 12px; margin: 4px 0 var(--gap); }
+  .note b { font-family: Unbounded, sans-serif; font-size: 16px; line-height: 1; }
+
+  .done { text-align: center; padding: 8px 0 4px; }
+  .done svg { width: 180px; height: 180px; }
+  .done .order { font: 700 14px Unbounded, sans-serif; margin: 12px 0 4px; }
+  .done p { color: #3a3a38; margin-bottom: 20px; }
+
+  /* tablet & desktop */
+  @media (min-width: 640px) {
+    .grid { grid-template-columns: repeat(3, 1fr); }
+  }
+  @media (min-width: 960px) {
+    :root { --gap: 24px; }
+    .wrap { max-width: 1200px; padding: 0 32px; }
+    .top .wrap { height: 68px; }
+    .logo { font-size: 20px; }
+    .hero { padding: 56px 0 40px; }
+    .hero h1 { font-size: 150px; }
+    .hero .stroke { width: 58%; height: 34px; margin: 18px 0 22px; }
+    .hero p { max-width: 380px; font-size: 18px; }
+    .hero .splash { right: 0; top: 40px; width: 340px; height: 340px; }
+    .rules { height: 40px; }
+    .cats { flex-wrap: wrap; overflow: visible; margin: 0; padding: 28px 0 8px; gap: 10px; }
+    .chip { height: 42px; padding: 0 20px; }
+    .chip:hover:not(.on) { box-shadow: 3px 3px 0 var(--ink); transform: translate(-1px, -1px); }
+    .section-head { padding-top: 28px; }
+    .section-head h2 { font-size: 18px; }
+    .grid { grid-template-columns: repeat(4, 1fr); }
+    .card { transition: transform .15s, box-shadow .15s; }
+    .card:hover { transform: translate(-3px, -3px); box-shadow: 6px 6px 0 var(--ink); }
+    .meta { padding: 14px; }
+    .meta .name { font-size: 15px; }
+    .meta .price { font-size: 16px; }
+
+    /* cart bar shrinks to a corner stroke */
+    .bar { left: auto; right: 32px; width: 400px; padding-left: 0; padding-right: 0; background: none; }
+
+    /* sheet becomes a right-hand drawer */
+    .sheet {
+      left: auto; top: 0; width: 520px; max-height: none;
+      border-top: 0; border-left: var(--line) solid var(--ink);
+      transform: translateX(105%);
+    }
+    .sheet .wrap { padding: 16px 32px 32px; }
+    .sheet::before { display: none; }
+    .size:hover:not(.on), .qty button:hover { background: var(--wash); }
+  }
+  @media (min-width: 1280px) {
+    .hero h1 { font-size: 172px; }
+    .hero .splash { width: 400px; height: 400px; top: 20px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+<!-- ink filters: give every outline a hand-drawn wobble -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="rough"><feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="3"/><feDisplacementMap in="SourceGraphic" scale="7"/></filter>
+  <filter id="wobble"><feTurbulence type="fractalNoise" baseFrequency="0.06" numOctaves="1" seed="8"/><feDisplacementMap in="SourceGraphic" scale="2.4"/></filter>
+</svg>
+
+<div class="demo">Демо-версія · оплата не проводиться · Демо-версія · оплата не проводиться</div>
+
+<header class="top">
+  <div class="wrap">
+    <div class="logo display">
+      <svg viewBox="0 0 40 40" aria-hidden="true"><path d="M20 3C31 2 38 10 37 20c-1 9 3 15-7 17-8 2-12-2-19-1-6 1-9-6-8-12 1-6-3-11 2-16 4-4 9-4 15-5z" fill="#0b0b0b" filter="url(#rough)"/><path d="M12 12v16h16" stroke="#fff" stroke-width="3.2" fill="none" stroke-linecap="round"/></svg>
+      LINE STORE
+    </div>
+    <button class="cart-btn" data-act="cart" aria-label="Кошик">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#0b0b0b" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h14l-1 13H6L5 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>
+      <b id="cartCount"></b>
+    </button>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="hero">
+    <svg class="splash" viewBox="0 0 200 200" aria-hidden="true" filter="url(#rough)">
+      <path d="M110 28c34-6 66 18 64 54-1 22 14 36 2 58-12 24-38 18-58 30-22 12-50 4-60-18-8-18-28-26-20-50 8-26 28-22 36-46 6-18 20-24 36-28z" fill="#0b0b0b"/>
+      <path d="M92 176c0 8 1 14 4 18 3-4 4-10 4-18z" fill="#0b0b0b"/><circle cx="96" cy="197" r="2.6" fill="#0b0b0b"/><path d="M150 160c0 6 1 9 3 11 2-2 3-5 3-11z" fill="#0b0b0b"/>
+      <circle cx="40" cy="172" r="7" fill="#0b0b0b"/><circle cx="22" cy="150" r="3.5" fill="#0b0b0b"/><circle cx="182" cy="30" r="5" fill="#0b0b0b"/>
+      <path d="M60 120c30-10 60-6 92-20" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <path d="M70 136c26-6 50-4 74-14" stroke="#fff" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+    </svg>
+    <h1 class="display"><span>LINE</span><span class="outline">STORE</span></h1>
+    <svg class="stroke" viewBox="0 0 300 26" preserveAspectRatio="none" aria-hidden="true"><path d="M4 15C60 6 120 20 180 10c40-6 80 3 116-3l-1 10c-42 8-82 0-122 8C112 34 60 18 6 24z" fill="#0b0b0b" filter="url(#rough)"/></svg>
+    <p>Одяг і аксесуари, намальовані однією лінією. Чорне, біле — і нічого зайвого.</p>
+  </section>
+  <svg class="rules" viewBox="0 0 340 30" preserveAspectRatio="none" aria-hidden="true">
+    <g filter="url(#wobble)" fill="#0b0b0b">
+      <path d="M0 3C80 1 200 4 340 2v2C200 6 80 4 0 5z"/>
+      <path d="M0 10C110 8 220 11 340 9v1.6C220 12 110 10 0 11.4z" opacity=".55"/>
+      <path d="M0 16C90 15 230 17 340 15v1.2C230 18 90 16 0 17z" opacity=".25"/>
+      <path d="M236 3c0 9 1 15 3 19 2-4 3-10 3-19z"/><circle cx="239" cy="25" r="2.4"/>
+      <path d="M58 4c0 4 1 6 2 7 1-1 2-3 2-7z"/>
+    </g>
+  </svg>
+
+  <nav class="cats" id="cats"></nav>
+
+  <div class="section-head"><h2 id="catTitle">Усі товари</h2><span id="catCount"></span></div>
+  <div class="grid" id="grid"></div>
+
+  <footer>
+    <svg class="stroke" viewBox="0 0 300 26" preserveAspectRatio="none" aria-hidden="true"><path d="M4 15C60 6 120 20 180 10c40-6 80 3 116-3l-1 10c-42 8-82 0-122 8C112 34 60 18 6 24z" fill="#0b0b0b" filter="url(#rough)"/></svg>
+    Line Store · демонстраційний каталог<br>Замовлення та оплата не обробляються
+  </footer>
+</main>
+
+<div class="bar" id="bar"><button class="btn" data-act="cart"><span id="barQty">Кошик</span><span class="sum" id="barSum"></span></button></div>
+
+<div class="scrim" id="scrim" data-act="close"></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true"><div class="wrap" id="sheetBody"></div></div>
+
+<script>
+const tg = window.Telegram && window.Telegram.WebApp;
+const haptic = (kind) => tg && tg.HapticFeedback && (kind === 'ok' ? tg.HapticFeedback.notificationOccurred('success') : tg.HapticFeedback.impactOccurred('light'));
+
+const BLOTS = [
+  'M100 22C140 18 178 46 176 92c-2 36 14 58-16 80-30 20-62 4-90 8-32 4-52-22-46-56 4-26-12-52 10-74 18-20 38-26 62-28z',
+  'M96 30c32-10 72 4 76 40 4 30-12 42-4 70 8 30-32 46-64 38-28-6-56 10-72-18-14-24 4-44-2-68-6-32 30-52 66-62z',
+  'M60 40c30-22 90-14 108 20 18 36-10 58 2 86 10 26-30 40-60 26-26-12-46 14-70-10-20-20 0-42-12-66-10-22 6-40 32-56z',
+];
+const DROPS = ['<circle cx="178" cy="40" r="5"/><circle cx="24" cy="178" r="3"/>', '<circle cx="30" cy="34" r="4"/><circle cx="176" cy="172" r="6"/>', '<circle cx="182" cy="160" r="4"/><circle cx="16" cy="60" r="3"/>'];
+
+// line art: shape = filled silhouette, detail = inner lines
+const ART = {
+  tee: { shape: 'M70 45L55 50 30 72l15 20 15-10v78h80V82l15 10 15-20-25-22-15-5c-10 14-50 14-60 0z', detail: 'M70 45c10 16 50 16 60 0M60 82v-8M140 82v-8M60 140h80' },
+  long: { shape: 'M70 42l-18 6-16 22-10 80 18 2 14-58 2 68h80l2-68 14 58 18-2-10-80-16-22-18-6c-10 14-50 14-60 0z', detail: 'M70 42c10 16 50 16 60 0M28 138l18 2M154 140l18-2M60 150h80' },
+  hoodie: { shape: 'M72 44c2-16 12-26 28-26s26 10 28 26l20 6 16 22 8 80-18 2-14-58-2 68H62l-2-68-14 58-18-2 8-80 16-22z', detail: 'M72 44c10 18 46 18 56 0M92 58v22M108 58v22M74 118h52l6 30H68z' },
+  cap: { shape: 'M48 122c0-42 22-62 52-62s52 20 52 62z', detail: 'M48 122c-18 2-26 12-22 18 34 6 84 0 126-18M100 60c-12 20-14 40-12 62M100 60c12 20 14 40 12 62' },
+  beanie: { shape: 'M55 140c0-46 20-70 45-70s45 24 45 70H55zM50 140h100v26H50z', detail: 'M65 140v26M80 140v26M95 140v26M110 140v26M125 140v26M140 140v26M100 70c0-4 0-6 0-8' },
+  tote: { shape: 'M52 80h96l6 88H46z', detail: 'M74 80c0-30 10-44 26-44s26 14 26 44M58 120h84M60 132h80' },
+  socks: { shape: 'M78 30h38v80l26 26c12 14 2 32-14 26-6-2-10-6-16-10l-34-26z', detail: 'M78 44h38M78 54h38M116 110c-8 6-12 14-10 24' },
+  sneaker: { shape: 'M30 132v-32c10-6 22-8 34-10l26-22c10-6 20-2 26 6l8 16c26 6 40 14 46 28 4 6 2 14-2 14z', detail: 'M28 132h144l-2 12H32zM82 80l10 10M74 88l10 10M66 96l10 10M56 120c36-8 74-8 110 0' },
+};
+
+const CATS = [
+  { id: 'all', name: 'Усе' }, { id: 'wear', name: 'Одяг' }, { id: 'head', name: 'Головні убори' },
+  { id: 'acc', name: 'Аксесуари' }, { id: 'shoes', name: 'Взуття' },
+];
+const CLOTH = ['XS', 'S', 'M', 'L', 'XL'];
+const PRODUCTS = [
+  { id: 1, cat: 'wear', art: 'tee', name: 'Футболка «Одна лінія»', price: 890, sizes: CLOTH, tag: 'Хіт', desc: 'Щільна бавовна 220 г/м², вільний крій. Мінімалізм, який тримає форму після десятків прань.', mat: '100% бавовна' },
+  { id: 2, cat: 'wear', art: 'hoodie', dark: true, name: 'Худі «Клякса»', price: 2190, sizes: CLOTH, tag: 'New', desc: 'Тринитка з начосом, глибокий капюшон, кишеня-кенгуру. Чорне, як свіжа туш.', mat: '80% бавовна, 20% поліестер' },
+  { id: 3, cat: 'wear', art: 'long', name: 'Лонгслів «Мазок»', price: 1290, sizes: CLOTH, desc: 'Тонкий трикотаж для міжсезоння. Подовжені рукави з манжетами.', mat: '95% бавовна, 5% еластан' },
+  { id: 4, cat: 'head', art: 'cap', dark: true, name: 'Кепка «Штрих»', price: 690, sizes: ['One size'], desc: 'Шість панелей, регульована застібка ззаду. Козирок можна загнути під себе.', mat: 'Бавовняний твіл' },
+  { id: 5, cat: 'head', art: 'beanie', name: 'Шапка «Пунктир»', price: 590, sizes: ['One size'], desc: 'Рубчаста в’язка з відворотом. Тепла, але не колюча.', mat: '50% вовна, 50% акрил' },
+  { id: 6, cat: 'acc', art: 'tote', name: 'Шопер «Контур»', price: 490, sizes: ['One size'], tag: 'Хіт', desc: 'Цупкий канвас, довгі ручки — влазить ноутбук на 15″ і ще трохи життя.', mat: 'Канвас 340 г/м²' },
+  { id: 7, cat: 'acc', art: 'socks', dark: true, name: 'Шкарпетки «Туш»', price: 190, sizes: ['36–40', '41–45'], desc: 'Високі, з посиленою п’ятою та носком. Чорні, бо так практичніше.', mat: '80% бавовна, 17% поліамід, 3% еластан' },
+  { id: 8, cat: 'shoes', art: 'sneaker', name: 'Кеди «Рівна лінія»', price: 2790, sizes: ['38', '39', '40', '41', '42', '43', '44', '45'], tag: 'New', desc: 'Низькі кеди з гумовою підошвою. Білий верх, чорний контур — все рівно.', mat: 'Канвас, гума' },
+];
+
+const uah = (n) => n.toLocaleString('uk-UA') + ' ₴';
+const byId = (id) => PRODUCTS.find((p) => p.id === id);
+const art = (p) => `<svg viewBox="0 0 200 200" aria-hidden="true">
+  <g filter="url(#rough)" class="blot"><path d="${BLOTS[p.id % 3]}"/>${DROPS[p.id % 3]}</g>
+  <path class="shadow-stroke" filter="url(#rough)" d="M56 180c30-6 60 4 90-2l-1 4c-30 6-60-2-88 2z"/>
+  <g class="ink ${p.dark ? 'dark' : ''}" filter="url(#wobble)"><path class="shape" d="${ART[p.art].shape}"/><path class="detail" d="${ART[p.art].detail}"/></g>
+</svg>`;
+const grabStroke = '<svg viewBox="0 0 64 12" preserveAspectRatio="none"><path d="M2 7C16 2 34 9 50 4c5-1 9 0 12-1l-1 5c-12 4-24 0-38 4C14 14 8 10 3 11z" fill="#0b0b0b" filter="url(#rough)"/></svg>';
+
+let cat = 'all';
+let cart = []; // {id, size, qty}
+let pick = null; // selected size in product sheet
+
+const cartQty = () => cart.reduce((s, l) => s + l.qty, 0);
+const cartSum = () => cart.reduce((s, l) => s + l.qty * byId(l.id).price, 0);
+
+function renderCats() {
+  document.getElementById('cats').innerHTML = CATS.map((c) =>
+    `<button class="chip ${c.id === cat ? 'on' : ''}" data-act="cat" data-id="${c.id}">${c.name}</button>`).join('');
+}
+
+function renderGrid() {
+  const list = PRODUCTS.filter((p) => cat === 'all' || p.cat === cat);
+  document.getElementById('catTitle').textContent = cat === 'all' ? 'Усі товари' : CATS.find((c) => c.id === cat).name;
+  document.getElementById('catCount').textContent = String(list.length).padStart(2, '0') + ' шт.';
+  document.getElementById('grid').innerHTML = list.map((p) => `
+    <button class="card" data-act="product" data-id="${p.id}">
+      <div class="pic">${art(p)}<span class="idx">${String(p.id).padStart(2, '0')}</span>${p.tag ? `<span class="tag">${p.tag}</span>` : ''}</div>
+      <div class="meta"><span class="name">${p.name}</span><span class="price">${uah(p.price)}<i>+</i></span></div>
+    </button>`).join('');
+}
+
+function renderBar() {
+  const q = cartQty();
+  document.getElementById('cartCount').textContent = q || '';
+  document.getElementById('bar').classList.toggle('show', q > 0 && !sheetOpen());
+  document.getElementById('barQty').textContent = `Кошик · ${q}`;
+  document.getElementById('barSum').textContent = uah(cartSum());
+}
+
+/* ---------- sheet ---------- */
+const sheet = document.getElementById('sheet');
+const sheetOpen = () => sheet.classList.contains('show');
+function openSheet(html) {
+  document.getElementById('sheetBody').innerHTML = `<div class="grab">${grabStroke}<button class="x" data-act="close" aria-label="Закрити">×</button></div>` + html;
+  sheet.classList.add('show');
+  document.getElementById('scrim').classList.add('show');
+  document.body.style.overflow = 'hidden';
+  sheet.scrollTop = 0;
+  if (tg) tg.BackButton.show();
+  renderBar();
+}
+function closeSheet() {
+  sheet.classList.remove('show');
+  document.getElementById('scrim').classList.remove('show');
+  document.body.style.overflow = '';
+  if (tg) tg.BackButton.hide();
+  renderBar();
+}
+
+function showProduct(id) {
+  const p = byId(id);
+  pick = p.sizes.length === 1 ? p.sizes[0] : null;
+  openSheet(`
+    <div class="p-pic">${art(p)}</div>
+    <div class="p-title display">${p.name}</div>
+    <div class="p-price">${uah(p.price)}</div>
+    <p class="p-desc">${p.desc}</p>
+    <div class="label">Розмір</div>
+    <div class="sizes">${p.sizes.map((s) => `<button class="size ${s === pick ? 'on' : ''}" data-act="size" data-id="${s}">${s}</button>`).join('')}</div>
+    <div class="specs"><div><span>Склад</span><span>${p.mat}</span></div><div><span>Артикул</span><span>LS-${String(p.id).padStart(4, '0')}</span></div><div><span>Доставка</span><span>Нова пошта, 1–3 дні</span></div></div>
+    <div class="actions"><button class="btn center" id="addBtn" data-act="add" data-id="${p.id}" ${pick ? '' : 'disabled'}>${pick ? 'Додати в кошик' : 'Оберіть розмір'}</button></div>`);
+}
+
+function showCart() {
+  if (!cart.length) {
+    return openSheet(`<div class="empty">
+      <svg viewBox="0 0 200 200"><g class="blot" filter="url(#rough)"><path d="${BLOTS[1]}"/></g><g class="ink" filter="url(#wobble)"><path class="shape" d="${ART.tote.shape}"/><path class="detail" d="${ART.tote.detail}"/></g></svg>
+      <div class="h-sheet display">Кошик порожній</div><p>Оберіть щось у каталозі</p>
+      <button class="btn center" data-act="close">До каталогу</button></div>`);
+  }
+  openSheet(`
+    <div class="h-sheet display">Кошик</div><div class="sub">${cartQty()} шт. у замовленні</div>
+    ${cart.map((l, i) => { const p = byId(l.id); return `
+      <div class="line-item"><div class="thumb">${art(p)}</div>
+        <div><div class="n">${p.name}</div><div class="s">Розмір: ${l.size}</div><div class="pr">${uah(p.price * l.qty)}</div></div>
+        <div class="qty"><button data-act="inc" data-id="${i}" aria-label="Більше">+</button><span>${l.qty}</span><button data-act="dec" data-id="${i}" aria-label="Менше">−</button></div>
+      </div>`; }).join('')}
+    <div class="totals"><div><span>Товари</span><span>${uah(cartSum())}</span></div><div><span>Доставка</span><span>за тарифами перевізника</span></div>
+      <div class="grand"><span>Разом</span><span>${uah(cartSum())}</span></div></div>
+    <button class="btn center" data-act="checkout">Оформити замовлення</button>`);
+}
+
+function showCheckout() {
+  const name = tg && tg.initDataUnsafe && tg.initDataUnsafe.user ? [tg.initDataUnsafe.user.first_name, tg.initDataUnsafe.user.last_name].filter(Boolean).join(' ') : '';
+  openSheet(`
+    <div class="h-sheet display">Оформлення</div><div class="sub">Разом до сплати: <b>${uah(cartSum())}</b></div>
+    <form id="order" novalidate>
+      <label class="field"><span>Ім’я та прізвище</span><input type="text" name="name" required autocomplete="name" value="${name.replace(/"/g, '&quot;')}"></label>
+      <label class="field"><span>Телефон</span><input type="tel" name="phone" required placeholder="+380 __ ___ __ __" pattern="\\+?[\\d \\(\\)\\-]{10,18}" autocomplete="tel"></label>
+      <label class="field"><span>Місто</span><input type="text" name="city" required placeholder="Київ"></label>
+      <label class="field"><span>Відділення Нової пошти</span><input type="text" name="np" required placeholder="№ 1"></label>
+      <div class="label" style="margin-top:4px">Оплата</div>
+      <div class="pay">
+        <label><input type="radio" name="pay" value="card" checked><span>Картою онлайн</span></label>
+        <label><input type="radio" name="pay" value="cod"><span>Накладений платіж</span></label>
+      </div>
+      <div class="note"><b>!</b><span>Це демо-версія. Кошти не списуються, замовлення нікуди не надсилається.</span></div>
+      <button class="btn" type="submit"><span>Оплатити</span><span class="sum">${uah(cartSum())}</span></button>
+    </form>`);
+}
+
+function showDone() {
+  const no = 'LS-' + Math.floor(10000 + Math.random() * 89999);
+  cart = [];
+  haptic('ok');
+  openSheet(`<div class="done">
+    <svg viewBox="0 0 200 200"><g filter="url(#rough)"><path d="${BLOTS[0]}" fill="#0b0b0b"/><circle cx="178" cy="40" r="5" fill="#0b0b0b"/><circle cx="24" cy="178" r="3" fill="#0b0b0b"/></g>
+      <path d="M62 102l26 26 52-56" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" filter="url(#wobble)"/></svg>
+    <div class="h-sheet display">Дякуємо!</div>
+    <div class="order">Замовлення ${no}</div>
+    <p>Це демонстрація: оплату не проведено, гроші не списано.</p>
+    <button class="btn center" data-act="close">Повернутися до каталогу</button></div>`);
+}
+
+/* ---------- events ---------- */
+document.addEventListener('click', (e) => {
+  const el = e.target.closest('[data-act]');
+  if (!el) return;
+  const id = el.dataset.id;
+  switch (el.dataset.act) {
+    case 'cat': cat = id; renderCats(); renderGrid(); haptic(); break;
+    case 'product': showProduct(+id); haptic(); break;
+    case 'size': {
+      pick = id;
+      document.querySelectorAll('.size').forEach((b) => b.classList.toggle('on', b.dataset.id === id));
+      const add = document.getElementById('addBtn'); add.disabled = false; add.textContent = 'Додати в кошик';
+      haptic(); break;
+    }
+    case 'add': {
+      const line = cart.find((l) => l.id === +id && l.size === pick);
+      line ? line.qty++ : cart.push({ id: +id, size: pick, qty: 1 });
+      haptic('ok'); closeSheet(); break;
+    }
+    case 'inc': cart[id].qty++; showCart(); haptic(); break;
+    case 'dec': if (--cart[id].qty === 0) cart.splice(id, 1); showCart(); haptic(); break;
+    case 'cart': showCart(); break;
+    case 'checkout': showCheckout(); break;
+    case 'close': closeSheet(); break;
+  }
+});
+document.addEventListener('submit', (e) => {
+  e.preventDefault();
+  if (e.target.reportValidity()) showDone();
+});
+
+if (tg) {
+  tg.ready();
+  tg.expand();
+  try { tg.setHeaderColor('#ffffff'); tg.setBackgroundColor('#ffffff'); } catch (_) {}
+  tg.BackButton.onClick(closeSheet);
+}
+
+renderCats();
+renderGrid();
+renderBar();
+
+// self-check: cart math
+cart = [{ id: 1, size: 'M', qty: 2 }, { id: 7, size: '41–45', qty: 1 }];
+console.assert(cartQty() === 3 && cartSum() === 890 * 2 + 190, 'cart math broken');
+cart = [];
+</script>
+</body>
+</html>
