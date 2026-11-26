@@ -215,51 +215,17 @@
   .done .order { font: 700 14px Unbounded, sans-serif; margin: 12px 0 4px; }
   .done p { color: #3a3a38; margin-bottom: 20px; }
 
-  /* tablet & desktop */
-  @media (min-width: 640px) {
-    .grid { grid-template-columns: repeat(3, 1fr); }
+  /* desktop: same phone column centred, empty sides */
+  @media (min-width: 600px) {
+    .sheet, .bar { max-width: 560px; margin: 0 auto; }
+    .sheet { border-left: var(--line) solid var(--ink); border-right: var(--line) solid var(--ink); }
+    .bar { background: none; }
   }
-  @media (min-width: 960px) {
-    :root { --gap: 24px; }
-    .wrap { max-width: 1200px; padding: 0 32px; }
-    .top .wrap { height: 68px; }
-    .logo { font-size: 20px; }
-    .hero { padding: 56px 0 40px; }
-    .hero h1 { font-size: 150px; }
-    .hero .stroke { width: 58%; height: 34px; margin: 18px 0 22px; }
-    .hero p { max-width: 380px; font-size: 18px; }
-    .hero .splash { right: 0; top: 40px; width: 340px; height: 340px; }
-    .rules { height: 40px; }
-    .cats { flex-wrap: wrap; overflow: visible; margin: 0; padding: 28px 0 8px; gap: 10px; }
-    .chip { height: 42px; padding: 0 20px; }
-    .chip:hover:not(.on) { box-shadow: 3px 3px 0 var(--ink); transform: translate(-1px, -1px); }
-    .section-head { padding-top: 28px; }
-    .section-head h2 { font-size: 18px; }
-    .grid { grid-template-columns: repeat(4, 1fr); }
+  @media (hover: hover) {
     .card { transition: transform .15s, box-shadow .15s; }
-    .card:hover { transform: translate(-3px, -3px); box-shadow: 6px 6px 0 var(--ink); }
-    .meta { padding: 14px; }
-    .meta .name { font-size: 15px; }
-    .meta .price { font-size: 16px; }
-
-    /* cart bar shrinks to a corner stroke */
-    .bar { left: auto; right: 32px; width: 400px; padding-left: 0; padding-right: 0; background: none; }
-
-    /* sheet becomes a right-hand drawer */
-    .sheet {
-      left: auto; top: 0; width: 520px; max-height: none;
-      border-top: 0; border-left: var(--line) solid var(--ink);
-      transform: translateX(105%);
-    }
-    .sheet .wrap { padding: 16px 32px 32px; }
-    .sheet::before { display: none; }
-    .size:hover:not(.on), .qty button:hover { background: var(--wash); }
+    .card:hover { transform: translate(-2px, -2px); box-shadow: 4px 4px 0 var(--ink); }
+    .chip:hover:not(.on), .size:hover:not(.on), .qty button:hover { background-color: var(--wash); }
   }
-  @media (min-width: 1280px) {
-    .hero h1 { font-size: 172px; }
-    .hero .splash { width: 400px; height: 400px; top: 20px; }
-  }
-
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 </head>
